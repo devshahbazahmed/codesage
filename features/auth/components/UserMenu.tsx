@@ -17,8 +17,6 @@ import {
 import { LogOutIcon, CircleChevronUp } from 'lucide-react';
 import { SIGN_IN_PATH } from '../utils';
 
-const DEFAULT_PLAN = 'free';
-
 export type UserMenuUser = {
   name?: string | null;
   email?: string | null;
@@ -82,35 +80,29 @@ export function UserMenu({ user, variant, plan, className }: UserMenuProps) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        className={(cn(className), 'flex justify-center items-center gap-2')}
-      >
+      <DropdownMenuTrigger asChild>
         {variant === 'compact' ? (
           <Button
             variant="ghost"
             size="icon"
             className="rounded-full"
             aria-label="Open account menu"
-          />
+          >
+            <UserAvatar user={user} />
+          </Button>
         ) : (
           <Button
             variant="ghost"
-            className="h-9 gap-2 px-2"
+            className={cn('h-12 w-full justify-start gap-2 px-2', className)}
             aria-label="Open account menu"
-          />
-        )}
-        <UserAvatar
-          user={user}
-          size={variant === 'compact' ? 'default' : 'sm'}
-        />
-        {variant === 'profile' ? (
-          <>
-            <span className="max-w-32 truncate text-left text-xs font-medium">
+          >
+            <UserAvatar user={user} size="sm" />
+            <span className="min-w-0 flex-1 truncate text-left text-xs font-medium">
               {displayName}
             </span>
-            <CircleChevronUp className="size-4 text-muted-foreground" />
-          </>
-        ) : null}
+            <CircleChevronUp className="size-4 shrink-0 text-muted-foreground" />
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuGroup>

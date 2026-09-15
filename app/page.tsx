@@ -4,7 +4,7 @@ import { UserMenuWithSession } from '@/features/auth/components/UserMenu';
 export default function Home() {
   return (
     <main className="flex justify-between items-center">
-      <UserMenuWithSession variant="profile" />
+      <UserMenuWithSession variant="compact" />
       <Button>Click me</Button>
     </main>
   );
