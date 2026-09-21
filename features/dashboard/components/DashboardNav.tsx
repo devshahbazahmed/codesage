@@ -4,6 +4,7 @@ import {
   FolderGit2Icon,
   LayoutDashboardIcon,
   SettingsIcon,
+  Split,
 } from 'lucide-react';
 import { GithubIcon } from '@/features/auth/components/SocialLoginButton';
 import {
@@ -14,26 +15,23 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { DASHBOARD_NAV_ITEMS, DashboardRoute } from '../lib/routes';
+import { DASHBOARD_NAV_ITEMS } from '../lib/routes';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 const NAV_ICONS = {
   'layout-dashboard': LayoutDashboardIcon,
   'folder-git-2': FolderGit2Icon,
+  'pull-requests': Split,
   github: GithubIcon,
   settings: SettingsIcon,
 } as const;
 
-function isNavActive(pathname: string, href: DashboardRoute) {
-  if (pathname === '/dashboard') {
-    return pathname === href;
-  }
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 export default function DashboardNav() {
   const pathname = usePathname();
+  const activeHref = DASHBOARD_NAV_ITEMS.filter(
+    ({ href }) => pathname === href || pathname.startsWith(`${href}/`)
+  ).sort((a, b) => b.href.length - a.href.length)[0]?.href;
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Workspace</SidebarGroupLabel>
@@ -41,7 +39,7 @@ export default function DashboardNav() {
         <SidebarMenu>
           {DASHBOARD_NAV_ITEMS.map((item) => {
             const Icon = NAV_ICONS[item.icon];
-            const active = isNavActive(pathname, item.href);
+            const active = item.href === activeHref;
 
             return (
               <SidebarMenuItem key={item.href}>

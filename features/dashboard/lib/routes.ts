@@ -28,7 +28,7 @@ export const DASHBOARD_NAV_ITEMS = [
   {
     title: 'Pull Requests',
     href: DASHBOARD_ROUTES.pullRequest,
-    icon: 'layout-dashboard' as const,
+    icon: 'pull-requests' as const,
   },
   {
     title: 'Settings',
