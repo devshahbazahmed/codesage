@@ -1,9 +1,6 @@
 import type { GithubInstallationStatus } from '@/features/dashboard/lib/types';
 import { getGithubApp } from '@/features/github/utils/github-app';
 import { prisma } from '@/lib/db';
-import { getServerSession } from '@/features/auth/actions';
-import { redirect } from 'next/navigation';
-import { DASHBOARD_ROUTES } from '@/features/dashboard/lib/routes';
 
 function getAccountLogin(
   account: { login?: string; slug?: string } | null | undefined
