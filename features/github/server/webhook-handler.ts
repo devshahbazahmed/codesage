@@ -1,6 +1,9 @@
-import { inngest } from "../../inngest/client";
-import { savePullRequest } from "../../reviews/server/savePullRequest";
+import { prisma } from "@/lib/db";
+import { canUserReview } from "@/features/billing/server/usage";
+import { inngest } from "@/features/inngest/client";
+import { savePullRequest } from "@/features/reviews/server/savePullRequest";
 import { getGithubApp } from "../utils/github-app";
+import { getUserIdByInstallationId } from "./installation";
 
 const REVIEWABLE_ACTIONS = ["opened", "synchronize", "reopened"];
 
@@ -54,8 +57,19 @@ export async function handleGithubWebhook(request: Request) {
 
   const pullRequest = await savePullRequest(event);
 
-  // TODO: add Github's installation ID
-  // TODO: TriggerReviewJob
+  const userId = await getUserIdByInstallationId(event.installation.id);
+
+  if (userId) {
+    const allowed = await canUserReview(userId);
+    if (!allowed) {
+      await prisma.pullRequest.update({
+        where: { id: pullRequest.id },
+        data: { status: "rate_limited" },
+      });
+      return Response.json({ received: true, rateLimited: true });
+    }
+  }
+
   await inngest.send({
     name: "github/pr.received",
     data: { pullRequestId: pullRequest.id },
