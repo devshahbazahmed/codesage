@@ -1,9 +1,11 @@
-import { prisma } from "../../../lib/db";
-import { inngest } from "../../inngest/client";
-import { chunkPrFiles } from "../utils/chunkCode";
+import { prisma } from "@/lib/db";
+import { inngest } from "@/features/inngest/client";
+import { chunkPrFiles } from "@/features/reviews/utils/chunkCode";
+import { postPrComment } from "@/features/reviews/server/PostPrComment";
+import { getPullRequestFiles } from "@/features/reviews/server/prFiles";
+import { buildPrNameSpace, saveChunksToPinecone, searchPrContext } from "./vector";
+import { buildRepoNameSpace } from "@/features/repo-sync/server/repo-sync";
 import { generateReview } from "./generateReview";
-import { postPrComment } from "./PostPrComment";
-import { formatPrFilesForReview, getPullRequestFiles } from "./prFiles";
 
 export const reviewPullRequest = inngest.createFunction(
   {
@@ -26,27 +28,6 @@ export const reviewPullRequest = inngest.createFunction(
       });
     });
 
-    const diff = await step.run("fetch-pr-diff", async () => {
-      const files = await getPullRequestFiles(
-        pullRequest.installationId,
-        pullRequest.repoFullName,
-        pullRequest.prNumber
-      );
-
-      return formatPrFilesForReview(files);
-    });
-
-    if (!diff.trim()) {
-      await step.run("mark-reviewed-no-code", async () => {
-        await prisma.pullRequest.update({
-          where: { id: pullRequestId },
-          data: { status: "reviewed" },
-        });
-      });
-
-      return { pullRequestId, status: "reviewed", reason: "no code to review" };
-    }
-
     const chunks = await step.run("breakdown-code", async () => {
       const files = await getPullRequestFiles(
         pullRequest.installationId,
@@ -54,6 +35,7 @@ export const reviewPullRequest = inngest.createFunction(
         pullRequest.prNumber
       );
 
+      // Turn unified diffs into fixed-size chunks for embedding
       return chunkPrFiles(pullRequest.prNumber, files);
     });
 
@@ -68,17 +50,39 @@ export const reviewPullRequest = inngest.createFunction(
       return { pullRequestId, status: "reviewed", reason: "No code to review" };
     }
 
-    // TODO: PR namespace isolates this diff from other PRs and from repo-wide sync data (add for pinecone db)
+    // PR namespace isolates this diff from other PR's and from repo-wide sync data
+    const namespace = buildPrNameSpace(pullRequest.repoFullName, pullRequest.prNumber);
 
+    await step.run("save-vectors-to-pinecone", async () => {
+      await saveChunksToPinecone(namespace, chunks);
+    });
+
+    // Pincecone needs a short delay before new vectors appear in search results
     await step.sleep("wait-for-vectors-to-index", "10s");
 
-    // TODO: repoContextSnippets
+    // Extra context from the on-demand codebase sync, when the repo was synced
+    const repoContextSnippets = await step.run("search-repo-context", async () => {
+      const repoSync = await prisma.repoSync.findUnique({
+        where: { repoFullName: pullRequest.repoFullName },
+      });
+
+      if (!repoSync || repoSync.status !== "synced") {
+        return [];
+      }
+
+      const repoNameSpace = buildRepoNameSpace(pullRequest.repoFullName);
+      return searchPrContext(repoNameSpace, pullRequest.title);
+    });
 
     const review = await step.run("generate-ai-review", async () => {
+      // Search within the PR's namespace for chunks related to the PR title
+      const contextSnippets = await searchPrContext(namespace, pullRequest.title);
+
       return generateReview({
         repoFullName: pullRequest.repoFullName,
         title: pullRequest.title,
-        diff,
+        contextSnippets,
+        repoContextSnippets,
       });
     });
 
