@@ -85,18 +85,8 @@ export const reviewPullRequest = inngest.createFunction(
         repoContextSnippets,
       });
 
-      console.log("=== generateReview RESULT ===");
-      console.log("result:", result);
-      console.log("type:", typeof result);
-      console.log("length:", typeof result === "string" ? result.length : "N/A");
-
       return result;
     });
-
-    console.log("=== REVIEW BEFORE COMMENT ===");
-    console.log("review:", review);
-    console.log("type:", typeof review);
-    console.log("length:", typeof review === "string" ? review.length : "N/A");
 
     await step.run("post-pr-comment", async () => {
       await postPrComment(pullRequest.installationId, pullRequest.repoFullName, pullRequest.prNumber, review);
