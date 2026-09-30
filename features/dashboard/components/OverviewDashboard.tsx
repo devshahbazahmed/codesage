@@ -68,8 +68,10 @@ export default function OverviewDashboard({ userName, initialOverview, isGithubC
               <Activity className="size-3.5" />
               Workspace Overview
             </p>
-            <h1 className="text-2xl font-semibold">Good morning, {firstName}</h1>
-            <p className="mt-1 text-sm text-[#a9959d]">Your pull request activity, straight from the database.</p>
+            <h1 className="text-2xl font-semibold">Hello There!, {firstName}</h1>
+            <p className="mt-1 text-sm text-[#a9959d]">
+              Your pull request activity, so that you can track your activity.
+            </p>
           </div>
           <p className="text-xs text-[#8e7d84]">
             {overviewQuery.isFetching ? "Updating..." : "Live updates every 5 seconds"}
