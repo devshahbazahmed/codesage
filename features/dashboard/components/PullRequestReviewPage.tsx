@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Bell,
   CheckCircle2,
   Clock3,
   ExternalLink,
@@ -15,6 +14,7 @@ import {
   Search,
   ShieldAlert,
   Sparkles,
+  X,
 } from "lucide-react";
 import type {
   DashboardPullRequest,
@@ -100,7 +100,7 @@ export default function PullRequestReviewPage({ initialPullRequests, isGithubCon
   const pullRequests = pullRequestsQuery.data.pullRequests;
   const [selectedPullRequestId, setSelectedPullRequestId] = useState(initialPullRequests[0]?.id ?? "");
   const [activeFile, setActiveFile] = useState(0);
-  const [activeTab, setActiveTab] = useState("Files Changed");
+  const [searchQuery, setSearchQuery] = useState("");
   const selectedPullRequest = pullRequests.find(({ id }) => id === selectedPullRequestId) ?? pullRequests[0] ?? null;
   const selectedId = selectedPullRequest?.id ?? "";
 
@@ -129,60 +129,36 @@ export default function PullRequestReviewPage({ initialPullRequests, isGithubCon
     ?.split(/\r?\n/)
     .find((line) => line.trim() && !line.trim().startsWith("#"))
     ?.replace(/[*`_]/g, "");
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const matchingPullRequests = normalizedSearch
+    ? pullRequests
+        .filter((pullRequest) =>
+          [
+            pullRequest.repoFullName,
+            pullRequest.prNumber,
+            pullRequest.title,
+            pullRequest.authorLogin,
+            pullRequest.headSha,
+            pullRequest.baseBranch,
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(normalizedSearch)
+        )
+        .slice(0, 5)
+    : [];
+  const matchingFiles = normalizedSearch
+    ? files
+        .map((file, index) => ({ file, index }))
+        .filter(({ file }) => `${file.filePath} ${file.patch}`.toLowerCase().includes(normalizedSearch))
+        .slice(0, 5)
+    : [];
+  const matchingReviewLine = normalizedSearch
+    ? reviewPullRequest?.reviewComment?.split(/\r?\n/).find((line) => line.toLowerCase().includes(normalizedSearch))
+    : undefined;
 
   return (
-    <main className="min-h-svh bg-[#1b171a] text-[#f5edf0]">
-      <div className="flex h-12 items-center gap-3 border-b border-[#34272d] bg-[#171316] px-4 sm:px-6">
-        <div className="flex min-w-0 items-center gap-2 text-[11px] text-[#aa989f]">
-          <span className="hidden sm:inline">CodeSage</span>
-          <span className="hidden text-[#65565d] sm:inline">/</span>
-          <span className="hidden sm:inline">Pull Requests</span>
-          <span className="text-[#65565d]">/</span>
-          <select
-            aria-label="Select a pull request"
-            value={selectedId}
-            onChange={(event) => {
-              setSelectedPullRequestId(event.target.value);
-              setActiveFile(0);
-            }}
-            disabled={pullRequests.length === 0}
-            className="max-w-56 truncate bg-transparent font-semibold text-[#ff7133] outline-none disabled:opacity-60"
-          >
-            {pullRequests.length === 0 ? (
-              <option value="">No pull requests</option>
-            ) : (
-              pullRequests.map((pullRequest) => (
-                <option key={pullRequest.id} value={pullRequest.id}>
-                  {pullRequest.repoFullName} #{pullRequest.prNumber} · {pullRequest.title}
-                </option>
-              ))
-            )}
-          </select>
-        </div>
-        <label className="ml-auto hidden h-8 max-w-sm flex-1 items-center gap-2 rounded border border-[#3a2d33] bg-[#211b1f] px-2.5 text-[11px] text-[#9e8e95] md:flex">
-          <Search className="size-3.5" />
-          <input
-            aria-label="Search reviews, files, and commits"
-            placeholder="Search reviews, files, commits..."
-            className="min-w-0 flex-1 bg-transparent text-[#f5edf0] outline-none placeholder:text-[#776970]"
-          />
-          <kbd className="rounded border border-[#49383f] px-1 py-0.5 text-[9px]">⌘K</kbd>
-        </label>
-        {isGithubConnected && (
-          <span className="hidden items-center gap-1.5 rounded border border-[#433027] bg-[#261d19] px-2 py-1 text-[10px] text-[#e6a26c] sm:flex">
-            <span className="size-1.5 rounded-full bg-[#ff8a3d]" />
-            GitHub Connected
-          </span>
-        )}
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="relative grid size-8 place-items-center rounded text-[#b7a8ae] hover:bg-[#2b2227]"
-        >
-          <Bell className="size-4" />
-        </button>
-      </div>
-
+    <main className="min-h-[calc(100svh-3.5rem)] bg-[#1b171a] text-[#f5edf0]">
       {!isGithubConnected || pullRequests.length === 0 ? (
         <div className="flex min-h-[55vh] flex-col items-center justify-center gap-3 px-6 text-center">
           <GitPullRequest className="size-8 text-[#d27b45]" />
@@ -209,9 +185,9 @@ export default function PullRequestReviewPage({ initialPullRequests, isGithubCon
                   <GitPullRequest className="size-4" />
                 </div>
                 <div className="min-w-0">
-                  <h1 className="max-w-3xl text-[16px] leading-6 font-semibold sm:text-[18px]">
+                  <h2 className="max-w-3xl text-[16px] leading-6 font-semibold sm:text-[18px]">
                     PR #{selectedPullRequest?.prNumber}: {selectedPullRequest?.title}
-                  </h1>
+                  </h2>
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-[#ab9ba1]">
                     <span className="rounded-full border border-[#6d2a2d] bg-[#3a1e22] px-2 py-0.5 font-medium text-[#ff8278]">
                       ● {statusLabel}
@@ -235,6 +211,21 @@ export default function PullRequestReviewPage({ initialPullRequests, isGithubCon
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
+                <select
+                  aria-label="Select a pull request"
+                  value={selectedId}
+                  onChange={(event) => {
+                    setSelectedPullRequestId(event.target.value);
+                    setActiveFile(0);
+                  }}
+                  className="max-w-56 truncate rounded border border-[#49383f] bg-[#211b1f] px-2.5 py-2 text-[10px] text-[#f5edf0] outline-none focus:border-[#ff7133]"
+                >
+                  {pullRequests.map((pullRequest) => (
+                    <option key={pullRequest.id} value={pullRequest.id}>
+                      {pullRequest.repoFullName} #{pullRequest.prNumber}
+                    </option>
+                  ))}
+                </select>
                 <span className="flex h-8 items-center gap-1.5 rounded border border-[#4b3925] bg-[#29221c] px-2.5 text-[10px] font-medium text-[#f2a64a]">
                   <Sparkles className="size-3.5" />
                   AI Review · {statusLabel}
@@ -261,6 +252,126 @@ export default function PullRequestReviewPage({ initialPullRequests, isGithubCon
                 Live refresh failed. Showing the last data received from the database.
               </p>
             )}
+            <div className="relative z-10 max-w-xl">
+              <label className="flex h-9 items-center gap-2 rounded border border-[#3a2f34] bg-[#211b1f] px-3 text-[11px] text-[#a9959d] focus-within:border-[#ff7133]">
+                <Search className="size-3.5 shrink-0" />
+                <input
+                  type="search"
+                  aria-label="Search pull requests, files, commits, and reviews"
+                  aria-controls="pull-request-search-results"
+                  autoComplete="off"
+                  placeholder="Search pull requests, files, commits, reviews..."
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") setSearchQuery("");
+                    if (event.key === "Enter" && matchingPullRequests[0]) {
+                      setSelectedPullRequestId(matchingPullRequests[0].id);
+                      setActiveFile(0);
+                      setSearchQuery("");
+                    }
+                  }}
+                  className="min-w-0 flex-1 bg-transparent text-[#f5edf0] outline-none placeholder:text-[#776970]"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setSearchQuery("")}
+                    className="grid size-6 shrink-0 place-items-center rounded text-[#a9959d] hover:bg-[#30252a] hover:text-white"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </label>
+              {normalizedSearch && (
+                <div
+                  id="pull-request-search-results"
+                  role="region"
+                  aria-label="Search results"
+                  className="absolute top-full right-0 left-0 mt-1 max-h-80 overflow-auto rounded-md border border-[#49383f] bg-[#211b1f] p-2 shadow-xl"
+                >
+                  {matchingPullRequests.length > 0 && (
+                    <div className="pb-2">
+                      <p className="px-2 py-1 text-[9px] font-semibold tracking-[0.08em] text-[#8e7e85] uppercase">
+                        Pull requests
+                      </p>
+                      {matchingPullRequests.map((pullRequest) => (
+                        <button
+                          key={pullRequest.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPullRequestId(pullRequest.id);
+                            setActiveFile(0);
+                            setSearchQuery("");
+                          }}
+                          className="flex w-full items-center justify-between gap-3 rounded px-2 py-2 text-left hover:bg-[#30252a]"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate text-[10px] text-[#eee3e7]">
+                              #{pullRequest.prNumber} {pullRequest.title}
+                            </span>
+                            <span className="mt-0.5 block truncate text-[9px] text-[#9e8e95]">
+                              {pullRequest.repoFullName} · {pullRequest.authorLogin ?? "Unknown author"}
+                            </span>
+                          </span>
+                          <GitPullRequest className="size-3.5 shrink-0 text-[#f0784c]" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {matchingFiles.length > 0 && (
+                    <div className="border-t border-[#342b30] py-2">
+                      <p className="px-2 py-1 text-[9px] font-semibold tracking-[0.08em] text-[#8e7e85] uppercase">
+                        Changed files in this PR
+                      </p>
+                      {matchingFiles.map(({ file, index }) => (
+                        <button
+                          key={file.filePath}
+                          type="button"
+                          onClick={() => {
+                            setActiveFile(index);
+                            setSearchQuery("");
+                            document
+                              .getElementById("pull-request-diff")
+                              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }}
+                          className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-[10px] text-[#ddd0d5] hover:bg-[#30252a]"
+                        >
+                          <FileCode2 className="size-3.5 shrink-0 text-[#d6a16e]" />
+                          <span className="truncate">{file.filePath}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {matchingReviewLine && (
+                    <div className="border-t border-[#342b30] py-2">
+                      <p className="px-2 py-1 text-[9px] font-semibold tracking-[0.08em] text-[#8e7e85] uppercase">
+                        Saved review
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          document
+                            .getElementById("saved-ai-review")
+                            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }}
+                        className="flex w-full items-center gap-2 rounded px-2 py-2 text-left text-[10px] text-[#ddd0d5] hover:bg-[#30252a]"
+                      >
+                        <Sparkles className="size-3.5 shrink-0 text-[#f0a048]" />
+                        <span className="truncate">{matchingReviewLine}</span>
+                      </button>
+                    </div>
+                  )}
+                  {matchingPullRequests.length === 0 && matchingFiles.length === 0 && !matchingReviewLine && (
+                    <p className="px-2 py-3 text-[10px] text-[#a9959d]">
+                      No matching pull requests, files, or review text.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
             <section className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-[#3b3035] bg-[#272125] px-3 py-2.5 sm:px-4">
               <div className="grid size-11 shrink-0 place-items-center rounded-full border-4 border-[#b86a32] text-[#f2a35c]">
                 {status === "reviewed" ? (
@@ -363,7 +474,10 @@ export default function PullRequestReviewPage({ initialPullRequests, isGithubCon
                 </div>
               </aside>
 
-              <div className="min-w-0 overflow-hidden rounded-md border border-[#3a2f34] bg-[#1d191c]">
+              <div
+                id="pull-request-diff"
+                className="min-w-0 overflow-hidden rounded-md border border-[#3a2f34] bg-[#1d191c]"
+              >
                 <div className="flex min-h-10 flex-wrap items-center justify-between gap-2 border-b border-[#392f34] bg-[#241e22] px-3 py-2">
                   <div className="flex min-w-0 items-center gap-2 text-[10px]">
                     <FileCode2 className="size-3.5 shrink-0 text-[#ff6a18]" />
@@ -407,7 +521,7 @@ export default function PullRequestReviewPage({ initialPullRequests, isGithubCon
                     )}
                   </div>
                 </div>
-                <section className="m-3 rounded-md border border-[#3a2f34] bg-[#241e22]">
+                <section id="saved-ai-review" className="m-3 rounded-md border border-[#3a2f34] bg-[#241e22]">
                   <div className="flex items-center gap-2 border-b border-[#3a2f34] px-3 py-2.5">
                     <Sparkles className="size-3.5 text-[#f0a048]" />
                     <h3 className="text-[10px] font-semibold">Saved AI Review</h3>
