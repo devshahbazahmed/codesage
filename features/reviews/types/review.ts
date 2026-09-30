@@ -1,6 +1,10 @@
 export type PrFile = {
   filePath: string;
   patch: string;
+  additions: number;
+  deletions: number;
+  changes: number;
+  status: string;
 };
 
 export type CodeChunk = {
