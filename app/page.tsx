@@ -1,11 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { UserMenuWithSession } from "@/features/auth/components/UserMenu";
+import type { Metadata } from "next";
+import LandingPage from "@/features/marketing/components/LandingPage";
+
+export const metadata: Metadata = {
+  title: "CodeSage — AI Pull Request Reviews",
+  description:
+    "Automated pull request reviews with security insights and repository-aware AI feedback, delivered directly to GitHub.",
+};
 
 export default function Home() {
-  return (
-    <main className="flex min-h-svh items-center justify-between bg-[#1b171a] px-6 py-8 text-[#f5edf0]">
-      <UserMenuWithSession variant="compact" />
-      <Button className="bg-[#ff5a00] text-white hover:bg-[#ff7133]">Click me</Button>
-    </main>
-  );
+  return <LandingPage />;
 }
