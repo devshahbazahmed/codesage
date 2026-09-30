@@ -30,7 +30,14 @@ export async function getPullRequestFiles(
     if (!file.patch) {
       continue;
     }
-    files.push({ filePath: file.filename, patch: file.patch });
+    files.push({
+      filePath: file.filename,
+      patch: file.patch,
+      additions: file.additions,
+      deletions: file.deletions,
+      changes: file.changes,
+      status: file.status,
+    });
   }
 
   return files;
