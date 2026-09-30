@@ -1,26 +1,22 @@
-import React from 'react';
-import { Sparkles } from 'lucide-react';
-import Logo from '@/components/Logo';
-import { requireUnAuth } from '@/features/auth/actions';
+import React from "react";
+import { Sparkles } from "lucide-react";
+import Logo from "@/components/Logo";
+import { requireUnAuth } from "@/features/auth/actions";
 
-export default async function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   await requireUnAuth();
   return (
-    <main className="flex justify-center items-center min-h-screen bg-[#0b090a]">
-      <section className="relative hidden min-h-screen overflow-hidden border-r border-white/8 lg:flex lg:w-[62%] lg:flex-col lg:justify-center lg:items-center">
+    <main className="flex min-h-screen items-center justify-center bg-[#1b171a]">
+      <section className="relative hidden min-h-screen overflow-hidden border-r border-white/8 lg:flex lg:w-[62%] lg:flex-col lg:items-center lg:justify-center">
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-32 -top-32 h-130 w-130 rounded-full bg-orange-600/10 blur-[130px]" />
+          <div className="absolute -top-32 -left-32 h-130 w-130 rounded-full bg-orange-600/10 blur-[130px]" />
           <div className="absolute bottom-0 left-[30%] h-125 w-150 rounded-full bg-red-600/7 blur-[140px]" />
         </div>
 
         <div className="relative z-10 flex h-full flex-col px-10 py-5 xl:px-14">
           {/* Logo */}
-          <div className="py-10 -mt-10">
+          <div className="-mt-10 py-10">
             <Logo />
           </div>
 
@@ -31,25 +27,22 @@ export default async function AuthLayout({
               Continuous Pull Request Security &amp; Architectural Audit
             </div>
 
-            <h1 className="mt-7 max-w-180 text-4xl font-bold leading-[1.08] tracking-[-0.035em] text-white xl:text-[50px]">
-              Ship cleaner code with an{' '}
+            <h1 className="mt-7 max-w-180 text-4xl leading-[1.08] font-bold tracking-[-0.035em] text-white xl:text-[50px]">
+              Ship cleaner code with an{" "}
               <span className="bg-linear-to-r from-orange-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
                 autonomous
-              </span>{' '}
+              </span>{" "}
               reviewer by your side.
             </h1>
 
             <p className="mt-6 max-w-180 text-[16px] leading-7 text-zinc-500 xl:text-[17px]">
-              Eliminate tedious boilerplate reviews. Catch memory leaks,
-              bottlenecks, and critical security regressions right inside
-              GitHub.
+              Eliminate tedious boilerplate reviews. Catch memory leaks, bottlenecks, and critical security regressions
+              right inside GitHub.
             </p>
           </div>
         </div>
       </section>
-      <section className="flex min-h-screen flex-1 bg-[#0b090a] justify-center items-center">
-        {children}
-      </section>
+      <section className="flex min-h-screen flex-1 items-center justify-center bg-[#1b171a]">{children}</section>
     </main>
   );
 }

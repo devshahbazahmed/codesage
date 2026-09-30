@@ -78,12 +78,14 @@ export const reviewPullRequest = inngest.createFunction(
       // Search within the PR's namespace for chunks related to the PR title
       const contextSnippets = await searchPrContext(namespace, pullRequest.title);
 
-      return generateReview({
+      const result = await generateReview({
         repoFullName: pullRequest.repoFullName,
         title: pullRequest.title,
         contextSnippets,
         repoContextSnippets,
       });
+
+      return result;
     });
 
     await step.run("post-pr-comment", async () => {
